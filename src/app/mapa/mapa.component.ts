@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import * as L from 'leaflet';
+import {LeafletService, Muni} from '../servicio/leaflet.service'
+
+
 
 @Component({
   selector: 'app-mapa',
@@ -12,12 +15,30 @@ export class MapaComponent implements OnInit {
   private locationMarker: L.Marker | null = null;
   private accuracyCircle: L.Circle | null = null;
 
+  muni:any[] = [];
+
+  myStyle = {
+    "color": "#ff7800",
+    "weight": 5,
+    "opacity": 0.65
+  };
+
+  constructor(private _LeafletService: LeafletService){
+    console.log("Cosntructor");
+  }
+
   ngOnInit(): void {
+    console.log('Inicializando MapaComponent'); // Verificar duplicados
     this.configureLeafletIcons();
     this.initMap();
+    this.muni = this._LeafletService.getMunicipio();
+    console.log("GeoJson",this.muni);
   }
 
   ngOnDestroy(): void {
+    if (this.map) {
+    this.map.remove(); // Destruye el mapa completamente
+    }
     this.clearMapLayers();
   }
 
@@ -33,6 +54,7 @@ export class MapaComponent implements OnInit {
 
     L.Marker.prototype.options.icon = iconDefault;
   }
+
   private initMap(): void {
     this.map = L.map('map').fitWorld();
 
@@ -43,6 +65,9 @@ export class MapaComponent implements OnInit {
 
     this.map.on('locationfound', (e) => this.onLocationFound(e));
     this.map.locate({ setView: true, maxZoom: 16 });
+    L.geoJSON(this.muni,{
+      style: this.myStyle
+    }).addTo(this.map)
   }
 
   private onLocationFound(e: L.LocationEvent): void {
@@ -87,7 +112,26 @@ export class MapaComponent implements OnInit {
     }
   }
 
+  isLocating = false;
   getLocation(): void {
+    if (!this.map) { // ← Validación crítica
+    console.error('El mapa no está inicializado');
+    return;
+    }
+    if (this.isLocating || !this.map) return;
+
+    this.isLocating = true;
+    navigator.geolocation.getCurrentPosition(
+    (position) => {
+      // Código exitoso...
+      this.isLocating = false;
+    },
+    (error) => {
+      // Manejo de errores...
+      this.isLocating = false;
+    }
+    );
+
     if (!navigator.geolocation) {
       alert('Geolocalización no soportada');
       return;
