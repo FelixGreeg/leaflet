@@ -1,0 +1,5 @@
+<button (click)="getLocation()" [disabled]="isLocating">
+  {{ isLocating ? 'Buscando...' : 'Obtener mi ubicación' }}
+</button>
+
+<div id="map"></div>
