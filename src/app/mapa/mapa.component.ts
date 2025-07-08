@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import * as L from 'leaflet';
-import {LeafletService, Muni} from '../servicio/leaflet.service'
+import {LeafletService} from '../servicio/leaflet.service'
 
 
 
@@ -15,14 +15,6 @@ export class MapaComponent implements OnInit {
   private locationMarker: L.Marker | null = null;
   private accuracyCircle: L.Circle | null = null;
 
-  muni:any[] = [];
-
-  myStyle = {
-    "color": "#ff7800",
-    "weight": 5,
-    "opacity": 0.65
-  };
-
   constructor(private _LeafletService: LeafletService){
     console.log("Cosntructor");
   }
@@ -31,8 +23,7 @@ export class MapaComponent implements OnInit {
     console.log('Inicializando MapaComponent'); // Verificar duplicados
     this.configureLeafletIcons();
     this.initMap();
-    this.muni = this._LeafletService.getMunicipio();
-    console.log("GeoJson",this.muni);
+    this.addGeoJSONLayer();
   }
 
   ngOnDestroy(): void {
@@ -65,10 +56,27 @@ export class MapaComponent implements OnInit {
 
     this.map.on('locationfound', (e) => this.onLocationFound(e));
     this.map.locate({ setView: true, maxZoom: 16 });
-    L.geoJSON(this.muni,{
-      style: this.myStyle
-    }).addTo(this.map)
   }
+private addGeoJSONLayer(): void {
+  const geoJSONData = this._LeafletService.getMunicipio();
+  console.log('Datos GeoJSON recibidos:', geoJSONData); // Verifica estructura
+
+  try {
+    const geoJSONLayer = L.geoJSON(geoJSONData as any, {
+      style: {
+        color: '#ff0000', // Rojo brillante para mejor visibilidad
+        weight: 5,        // Línea más gruesa
+        opacity: 1,
+        fillOpacity: 0.8
+      }
+    }).addTo(this.map);
+
+    console.log('Capas agregadas:', geoJSONLayer.getLayers().length);
+    this.map.fitBounds(geoJSONLayer.getBounds());
+  } catch (error) {
+    console.error('Error al agregar GeoJSON:', error);
+  }
+}
 
   private onLocationFound(e: L.LocationEvent): void {
     const radius = e.accuracy;
@@ -196,4 +204,7 @@ export class MapaComponent implements OnInit {
       }
     );
   }
+
+
 }
+
